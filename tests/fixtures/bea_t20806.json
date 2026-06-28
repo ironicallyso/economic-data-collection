@@ -1,0 +1,11 @@
+{
+  "BEAAPI": {
+    "Results": {
+      "Data": [
+        {"SeriesCode": "DPCERX", "LineNumber": "1", "LineDescription": "Personal consumption expenditures", "TimePeriod": "2024M01", "DataValue": "16,789.3", "CL_UNIT": "Level"},
+        {"SeriesCode": "DPCERX", "LineNumber": "1", "LineDescription": "Personal consumption expenditures", "TimePeriod": "2024M02", "DataValue": "16,812.7", "CL_UNIT": "Level"},
+        {"SeriesCode": "DGDSRX", "LineNumber": "2", "LineDescription": "Goods", "TimePeriod": "2024M01", "DataValue": "5,432.1", "CL_UNIT": "Level"}
+      ]
+    }
+  }
+}

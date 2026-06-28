@@ -1,0 +1,18 @@
+{
+  "status": "REQUEST_SUCCEEDED",
+  "responseTime": 120,
+  "message": [],
+  "Results": {
+    "series": [
+      {
+        "seriesID": "CES0500000013",
+        "data": [
+          {"year": "2024", "period": "M13", "periodName": "Annual", "value": "11.20", "footnotes": [{}]},
+          {"year": "2024", "period": "M03", "periodName": "March", "value": "-", "footnotes": [{"code": "P", "text": "Not yet published"}]},
+          {"year": "2024", "period": "M02", "periodName": "February", "value": "11.18", "footnotes": [{}]},
+          {"year": "2024", "period": "M01", "periodName": "January", "value": "11.15", "footnotes": [{}]}
+        ]
+      }
+    ]
+  }
+}

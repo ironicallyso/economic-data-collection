@@ -1,0 +1,29 @@
+bls:
+  base_url: "https://api.bls.gov/publicAPI/v2/timeseries/data/"
+  start_year: 2006
+  max_years_per_request: 10 # unregistered cap; registered key raises this to 20
+  series:
+    - id: "CES0500000013"
+      units: "1982-84 dollars"
+      name: "Real average hourly earnings, all employees, total private"
+    - id: "CES0500000012"
+      units: "1982-84 dollars"
+      name: "Real average weekly earnings, all employees, total private"
+  output_path: "outputs/bls_earnings.csv"
+
+bea:
+  base_url: "https://apps.bea.gov/api/data/"
+  dataset: "NIPA"
+  frequency: "M"
+  tables:
+    - table_name: "T20806"
+      line_number: 1
+      units: "billions of chained 2017 dollars, SAAR"
+      name: "Real PCE level"
+    - table_name: "T20804"
+      line_number: 1
+      units: "index 2017=100"
+      name: "PCE price index"
+  output_path: "outputs/bea_pce.csv"
+
+latest_lookback_months: 24
