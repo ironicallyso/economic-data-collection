@@ -26,6 +26,7 @@ combined <- dplyr::bind_rows(bls_df, bea_df) |>
 
 method <- config$analysis$method
 ma_window <- config$analysis$ma_window
+max_fill_months <- config$analysis$max_fill_months
 plot_cfg <- config$plot
 
 analyzed <- list()
@@ -34,7 +35,7 @@ for (sid in unique(combined$series_id)) {
   df_s <- dplyr::filter(combined, series_id == sid)
   result <- tryCatch(
     df_s |>
-      assert_no_gaps() |>
+      fill_gaps(max_fill_months = max_fill_months) |>
       compute_yoy(method = method) |>
       compute_ma(ma_window = ma_window),
     error = function(e) {

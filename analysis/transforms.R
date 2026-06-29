@@ -1,31 +1,63 @@
-#' Year*12 + month, used to detect non-consecutive months within a series.
-month_index <- function(date) {
-  lubridate::year(date) * 12L + lubridate::month(date)
-}
-
-#' Stop if any series has a non-consecutive month-to-month gap.
+#' Fill interior monthly gaps so the calendar grid is regular before YoY math.
 #'
 #' compute_yoy() lags by ROW position (lag(value, 12)), not by calendar date,
 #' so a missing month would silently misalign the year-over-year comparison.
-#' This check guarantees every series has exactly one row per consecutive
-#' month before any lag-based math runs.
-assert_no_gaps <- function(df) {
-  gaps <- df |>
+#' Rather than refuse, we complete each series to a one-row-per-month grid
+#' (first..last observed month) and linearly interpolate the missing values.
+#' Completing the grid makes lag(value, 12) a valid 12-calendar-month lag again.
+#'
+#' Gaps are normal (e.g. a government shutdown delays a BLS/BEA release). Short
+#' interior gaps are interpolated; an interior gap longer than `max_fill_months`
+#' is fabricating too much, so we stop() and let the caller skip the series.
+#' By construction the grid runs first..last observed month, so there are no
+#' leading/trailing gaps within a series and no extrapolation is needed.
+#'
+#' Adds a logical `imputed` column (TRUE for filled rows) for downstream
+#' transparency. Static per-series columns are carried onto the new rows.
+fill_gaps <- function(df, max_fill_months) {
+  static_cols <- c("series_id", "units", "source", "label")
+  static_cols <- intersect(static_cols, names(df))
+
+  df |>
     dplyr::arrange(series_id, date) |>
     dplyr::group_by(series_id) |>
-    dplyr::mutate(idx = month_index(date), gap = idx - dplyr::lag(idx)) |>
-    dplyr::ungroup() |>
-    dplyr::filter(!is.na(gap) & gap != 1)
+    dplyr::group_modify(function(g, key) {
+      grid <- tibble::tibble(
+        date = seq(min(g$date), max(g$date), by = "1 month")
+      )
+      out <- dplyr::left_join(grid, g, by = "date") |>
+        dplyr::mutate(imputed = is.na(value))
 
-  if (nrow(gaps) > 0) {
-    messages <- sprintf(
-      "series '%s': gap of %d month(s) before %s",
-      gaps$series_id, gaps$gap - 1L, format(gaps$date, "%Y-%m")
-    )
-    stop(paste(c("Gap(s) detected in monthly data:", messages), collapse = "\n"))
-  }
+      # Reject any consecutive run of missing months longer than the cap.
+      runs <- rle(out$imputed)
+      too_long <- runs$values & runs$lengths > max_fill_months
+      if (any(too_long)) {
+        end_idx <- cumsum(runs$lengths)
+        first_bad <- which(too_long)[1]
+        start_row <- end_idx[first_bad] - runs$lengths[first_bad] + 1L
+        stop(sprintf(
+          "series '%s': interior gap of %d month(s) starting %s exceeds max_fill_months (%d)",
+          key$series_id[1], runs$lengths[first_bad],
+          format(out$date[start_row], "%Y-%m"), max_fill_months
+        ), call. = FALSE)
+      }
 
-  invisible(df)
+      # Linear interpolation of interior NAs (no extrapolation at the edges).
+      # The grid is one consecutive row per month, so interpolate on row index
+      # (even monthly spacing) rather than calendar days, which have unequal
+      # month lengths — a single-month gap then equals the neighbor average.
+      if (any(out$imputed)) {
+        out$value <- zoo::na.approx(out$value, na.rm = FALSE)
+      }
+
+      # Carry constant per-series columns onto the newly created rows.
+      fill_these <- setdiff(static_cols, "series_id")
+      if (length(fill_these) > 0) {
+        out <- tidyr::fill(out, dplyr::all_of(fill_these), .direction = "downup")
+      }
+      out
+    }) |>
+    dplyr::ungroup()
 }
 
 #' Year-over-year change at month t vs t-12, per series.

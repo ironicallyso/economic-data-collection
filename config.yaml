@@ -37,6 +37,7 @@ latest_lookback_months: 24
 analysis:
   method: "percent" # "percent" -> value/lag12 - 1 ; "log" -> log(value) - log(lag12)
   ma_window: 3 # trailing months, of the YoY series
+  max_fill_months: 3 # longest interior monthly gap linearly interpolated before a series is skipped
 
 plot:
   width_in: 10

@@ -43,7 +43,7 @@ rate of change and its 3-month trailing moving average, saving one plot per seri
 API calls, no scheduling, no forecasting.
 
 ```bash
-Rscript -e 'install.packages(c("tidyverse", "slider", "yaml", "testthat"))'
+Rscript -e 'install.packages(c("tidyverse", "slider", "zoo", "yaml", "testthat"))'
 Rscript analysis/run.R
 Rscript tests/testthat.R
 ```
@@ -52,5 +52,8 @@ Rscript tests/testthat.R
 value, yoy, yoy_ma) for one series. The YoY method (`"percent"` or `"log"`) and moving
 average window are configured in `config.yaml` under `analysis:`, not hardcoded.
 
-If a series has a gap in consecutive months (e.g. an unpublished BLS month), that series
-is skipped with a warning naming the series and gap — values are never interpolated.
+If a series has a gap in consecutive months (e.g. a government shutdown delays a release),
+the series is completed to a regular monthly grid and short interior gaps are **linearly
+interpolated** before the YoY math runs. Interpolated months are flagged (`imputed`) and
+drawn as open markers on the plot. An interior gap longer than `analysis.max_fill_months`
+(config) is left unfilled and that series is skipped with a warning naming the series and gap.

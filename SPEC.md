@@ -1,6 +1,6 @@
 # economic-data-collection — Spec
 
-> Last updated: June 28, 2026
+> Last updated: June 29, 2026
 
 ## Goal
 A utility that collects U.S. real earnings (BLS) and personal consumption expenditures (BEA) data via official APIs, and runs a recurring year-over-year rate-of-change analysis. Provides clean macro indicators (real wage growth, PCE inflation, real consumption) as inputs to the user's broader analysis workflow.
@@ -18,7 +18,7 @@ A utility that collects U.S. real earnings (BLS) and personal consumption expend
 4. `latest` mode upserts by `(series_id, date)`, overwriting recent months to capture agency revisions. Never append-only.
 5. All series IDs, table names, and line numbers are **config-driven**, not hardcoded — adding a series should require only a config edit.
 6. Persist to **CSV in tidy long format, one file per source** (one BLS earnings file, one BEA PCE file), with columns `series_id, date, value, units, source, fetched_at`.
-7. R analysis computes, per series: YoY rate of change (configurable: simple percent **or** log difference) at month *t* vs *t−12*, then a **3-month trailing average** of that YoY series.
+7. R analysis computes, per series: YoY rate of change (configurable: simple percent **or** log difference) at month *t* vs *t−12*, then a **3-month trailing average** of that YoY series. Before the YoY math, each series is completed to a regular monthly grid; interior gaps up to a configurable `analysis.max_fill_months` are **linearly interpolated** (so the positional 12-month lag stays valid), interpolated months are flagged (`imputed`), and an interior gap longer than the cap causes that series to be skipped with a warning.
 8. R analysis produces one plot per series of the **YoY rate of change** with its **3-month moving average** overlaid, saved to disk.
 9. API keys are read from environment variables; never committed.
 
@@ -45,9 +45,11 @@ A utility that collects U.S. real earnings (BLS) and personal consumption expend
 - **Do not commit API keys** — env vars only; confirm `.gitignore` excludes `.env` before the first commit.
 - **Do not confuse levels with the price index** — real PCE *level* is Table 2.8.6 (`T20806`); PCE *price index* is Table 2.8.4 (`T20804`).
 - **Order of operations in analysis** — compute YoY first, then the 3-month average *of the YoY series*, not a 3-month average of the level.
+- **Monthly gaps misalign the positional lag** — `compute_yoy()` lags by row position (`lag(value, 12)`), valid only on a regular one-row-per-month grid. Do not feed gapped series straight into the lag. Complete each series to a monthly grid and linearly interpolate short interior gaps (`analysis.max_fill_months`); skip the series only when a gap exceeds the cap. Never silently drop months or left-align a gapped series.
 
 ## Acceptance Criteria
 - Running historical collection writes **one CSV per source** (BLS, BEA) with monthly rows for its series: earnings ≥ ~230 rows each (2006→present), PCE spanning available monthly history.
 - Running latest collection updates the existing CSV in place; running it twice in a row yields **no duplicate** `(series_id, date)` rows and refreshes the most recent months.
 - The R analysis run produces, per series, a YoY column, a 3-month-average column, and a saved plot file; one YoY value spot-checks correctly by hand.
+- A series with a short interior gap (e.g. one missing month) still produces a plot: the missing month is added with `imputed = TRUE`, its value equals the linear interpolation of the bracketing months, and it is drawn as an open marker on the plot. A series whose interior gap exceeds `analysis.max_fill_months` is skipped with a warning naming the series and gap.
 - No secrets appear in committed files or `git log`.

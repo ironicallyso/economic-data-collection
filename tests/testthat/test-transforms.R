@@ -26,14 +26,42 @@ test_that("compute_ma produces leading NAs and correct trailing mean", {
   expect_equal(result$yoy_ma[6], mean(c(2, 3, 4)), tolerance = 1e-8)
 })
 
-test_that("assert_no_gaps passes silently on a clean series", {
+test_that("fill_gaps leaves a clean series unchanged with imputed all FALSE", {
   df <- make_series(12)
-  expect_silent(assert_no_gaps(df))
+  result <- fill_gaps(df, max_fill_months = 3)
+  expect_equal(nrow(result), nrow(df))
+  expect_equal(result$value, df$value)
+  expect_false(any(result$imputed))
 })
 
-test_that("assert_no_gaps stops with an informative message on a gap", {
-  df <- make_series(12)
-  df_gapped <- df[-6, ] # drop one mid-series month
-  expect_error(assert_no_gaps(df_gapped), regexp = "S1")
-  expect_error(assert_no_gaps(df_gapped), regexp = "gap")
+test_that("fill_gaps interpolates a single-month gap to the neighbor average", {
+  df <- make_series(6) # values 100..105, +1/month
+  df_gapped <- df[-4, ] # drop the 4th month (value 103)
+  result <- fill_gaps(df_gapped, max_fill_months = 3)
+
+  expect_equal(nrow(result), 6) # grid restored to one row per month
+  filled <- result[result$imputed, ]
+  expect_equal(nrow(filled), 1)
+  expect_equal(filled$date, df$date[4])
+  expect_equal(filled$value, mean(c(102, 104)), tolerance = 1e-8)
+  expect_equal(sum(result$imputed), 1)
+})
+
+test_that("fill_gaps interpolates a multi-month gap within the cap", {
+  df <- make_series(8) # values 100..107
+  df_gapped <- df[-c(4, 5), ] # drop two consecutive months (103, 104)
+  result <- fill_gaps(df_gapped, max_fill_months = 3)
+
+  expect_equal(nrow(result), 8)
+  filled <- result[result$imputed, ]
+  expect_equal(nrow(filled), 2)
+  # Linear interpolation between 102 and 105 -> 103, 104.
+  expect_equal(filled$value, c(103, 104), tolerance = 1e-8)
+})
+
+test_that("fill_gaps errors naming the series when a gap exceeds the cap", {
+  df <- make_series(10)
+  df_gapped <- df[-c(4, 5, 6, 7), ] # drop four consecutive months
+  expect_error(fill_gaps(df_gapped, max_fill_months = 3), regexp = "S1")
+  expect_error(fill_gaps(df_gapped, max_fill_months = 3), regexp = "max_fill_months")
 })
