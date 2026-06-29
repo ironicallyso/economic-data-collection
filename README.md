@@ -34,3 +34,23 @@ black --check collect tests
 ```
 
 All tests run offline against saved fixtures in `tests/fixtures/` — no network calls.
+
+## R analysis
+
+**Phase 2 scope:** reads `outputs/bls_earnings.csv` and `outputs/bea_pce.csv` (already
+populated by the Python collectors above) and computes, per series, the year-over-year
+rate of change and its 3-month trailing moving average, saving one plot per series. No
+API calls, no scheduling, no forecasting.
+
+```bash
+Rscript -e 'install.packages(c("tidyverse", "slider", "yaml", "testthat"))'
+Rscript analysis/run.R
+Rscript tests/testthat.R
+```
+
+`analysis/run.R` writes PNGs to `outputs/plots/` and prints a spot-check tail (date,
+value, yoy, yoy_ma) for one series. The YoY method (`"percent"` or `"log"`) and moving
+average window are configured in `config.yaml` under `analysis:`, not hardcoded.
+
+If a series has a gap in consecutive months (e.g. an unpublished BLS month), that series
+is skipped with a warning naming the series and gap — values are never interpolated.

@@ -12,6 +12,7 @@ class BLSSeriesConfig:
     id: str
     units: str
     name: str
+    label: str = ""
 
 
 @dataclass(frozen=True)
@@ -29,6 +30,8 @@ class BEATableConfig:
     line_number: int
     units: str
     name: str
+    series_id: str = ""
+    label: str = ""
 
 
 @dataclass(frozen=True)
