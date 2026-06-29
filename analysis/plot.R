@@ -10,12 +10,34 @@ plot_yoy_series <- function(df_one_series, label, method, plot_cfg) {
     tidyr::pivot_longer(c(yoy, yoy_ma), names_to = "metric", values_to = "metric_value") |>
     dplyr::mutate(metric = dplyr::recode(metric, yoy = "YoY", yoy_ma = "3-mo MA"))
 
+  # Interpolated months: marked on the YoY line so filled values are never
+  # mistaken for real observations. `imputed` is added by fill_gaps().
+  imputed_pts <- if ("imputed" %in% names(df_one_series)) {
+    df_one_series |>
+      dplyr::filter(imputed, !is.na(yoy)) |>
+      dplyr::select(date, metric_value = yoy)
+  } else {
+    df_one_series[0, c("date", "yoy")] |> dplyr::rename(metric_value = yoy)
+  }
+
+  caption <- paste("YoY method:", method_label)
+  if (nrow(imputed_pts) > 0) {
+    caption <- paste0(caption, " • open markers = interpolated months")
+  }
+
   p <- ggplot2::ggplot(plot_long, ggplot2::aes(x = date, y = metric_value, color = metric)) +
     ggplot2::geom_line(na.rm = TRUE) +
+    ggplot2::geom_point(
+      data = imputed_pts,
+      mapping = ggplot2::aes(x = date, y = metric_value),
+      inherit.aes = FALSE,
+      shape = 21, fill = "white", color = "#377eb8", size = 2, stroke = 0.8,
+      na.rm = TRUE
+    ) +
     ggplot2::scale_color_manual(values = c("YoY" = "#377eb8", "3-mo MA" = "#e41a1c")) +
     ggplot2::labs(
       title = label,
-      caption = paste("YoY method:", method_label),
+      caption = caption,
       x = "Month",
       y = y_label,
       color = NULL

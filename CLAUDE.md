@@ -5,7 +5,7 @@ Public utility that collects U.S. real earnings (BLS) and personal consumption e
 
 ## Tech Stack
 - **Collection:** Python 3.11+ — `requests` (HTTP), `pandas` (CSV read/write, upsert by key). No web framework.
-- **Analysis:** R 4.x — tidyverse (`readr`, `dplyr`, `ggplot2`, `lubridate`) + `slider` for the moving average, `yaml` for config, `testthat` for tests.
+- **Analysis:** R 4.x — tidyverse (`readr`, `dplyr`, `ggplot2`, `lubridate`) + `slider` for the moving average, `zoo` for linear gap interpolation, `yaml` for config, `testthat` for tests.
 - **Config:** `config.yaml` (series IDs, BEA table names + line numbers, output paths, lookback) read by both languages. No values hardcoded in source.
 - **Secrets:** `.env` (gitignored) — `BEA_API_KEY` (required), `BLS_API_KEY` (optional).
 
