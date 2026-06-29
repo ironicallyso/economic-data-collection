@@ -6,9 +6,11 @@ bls:
     - id: "CES0500000013"
       units: "1982-84 dollars"
       name: "Real average hourly earnings, all employees, total private"
+      label: "Real average hourly earnings, all employees (total private)"
     - id: "CES0500000012"
       units: "1982-84 dollars"
       name: "Real average weekly earnings, all employees, total private"
+      label: "Real average weekly earnings, all employees (total private)"
   output_path: "outputs/bls_earnings.csv"
 
 bea:
@@ -18,12 +20,26 @@ bea:
   tables:
     - table_name: "T20806"
       line_number: 1
+      series_id: "DPCERX" # BEA SeriesCode written into bea_pce.csv by collect/bea.py
       units: "millions of chained 2017 dollars, SAAR"
       name: "Real PCE level"
+      label: "Real PCE level (chained 2017 dollars, SAAR)"
     - table_name: "T20804"
       line_number: 1
+      series_id: "DPCERG"
       units: "index 2017=100"
       name: "PCE price index"
+      label: "PCE price index"
   output_path: "outputs/bea_pce.csv"
 
 latest_lookback_months: 24
+
+analysis:
+  method: "percent" # "percent" -> value/lag12 - 1 ; "log" -> log(value) - log(lag12)
+  ma_window: 3 # trailing months, of the YoY series
+
+plot:
+  width_in: 10
+  height_in: 6
+  dpi: 150
+  output_dir: "outputs/plots"
