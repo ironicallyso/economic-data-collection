@@ -18,7 +18,7 @@ bea:
   tables:
     - table_name: "T20806"
       line_number: 1
-      units: "billions of chained 2017 dollars, SAAR"
+      units: "millions of chained 2017 dollars, SAAR"
       name: "Real PCE level"
     - table_name: "T20804"
       line_number: 1
