@@ -50,11 +50,44 @@ for (sid in unique(combined$series_id)) {
 
 analysis_df <- dplyr::bind_rows(analyzed)
 
+recent_years <- plot_cfg$recent_years
+recent_suffix <- sprintf("_last%dy", recent_years)
+
 for (sid in unique(analysis_df$series_id)) {
   df_s <- dplyr::filter(analysis_df, series_id == sid)
-  p <- plot_yoy_series(df_s, label = df_s$label[1], method = method, plot_cfg = plot_cfg)
-  out_path <- save_plot(p, source = df_s$source[1], series_id = sid, method = method, plot_cfg = plot_cfg)
-  message("Wrote ", out_path)
+  variants <- list(
+    list(df = df_s, suffix = ""),
+    list(df = truncate_recent(df_s, recent_years), suffix = recent_suffix)
+  )
+  for (variant in variants) {
+    p <- plot_yoy_series(variant$df, label = df_s$label[1], method = method, plot_cfg = plot_cfg)
+    out_path <- save_plot(
+      p, source = df_s$source[1], series_id = sid, method = method,
+      plot_cfg = plot_cfg, suffix = variant$suffix
+    )
+    message("Wrote ", out_path)
+  }
+}
+
+for (pair in plot_cfg$combined) {
+  df_left <- dplyr::filter(analysis_df, series_id == pair$left_series_id)
+  df_right <- dplyr::filter(analysis_df, series_id == pair$right_series_id)
+  if (nrow(df_left) == 0 || nrow(df_right) == 0) {
+    warning(sprintf("Skipping combined plot '%s': missing series data", pair$label), call. = FALSE)
+    next
+  }
+  variants <- list(
+    list(l = df_left, r = df_right, suffix = ""),
+    list(l = truncate_recent(df_left, recent_years), r = truncate_recent(df_right, recent_years), suffix = recent_suffix)
+  )
+  for (variant in variants) {
+    p <- plot_combined_series(variant$l, variant$r, label = pair$label, plot_cfg = plot_cfg)
+    out_path <- save_combined_plot(
+      p, left_id = pair$left_series_id, right_id = pair$right_series_id,
+      suffix = variant$suffix, plot_cfg = plot_cfg
+    )
+    message("Wrote ", out_path)
+  }
 }
 
 if (nrow(analysis_df) > 0) {

@@ -44,3 +44,11 @@ plot:
   height_in: 6
   dpi: 150
   output_dir: "outputs/plots"
+  recent_years: 10 # lookback window for the truncated "recent" plot variant
+  combined: # series pairs overlaid on dual y-axes (3-mo MA of YoY only)
+    - left_series_id: "DPCERX"
+      right_series_id: "CES0500000013"
+      label: "Real PCE vs. Real Average Hourly Earnings (3-mo MA of YoY)"
+    - left_series_id: "DPCERX"
+      right_series_id: "CES0500000012"
+      label: "Real PCE vs. Real Average Weekly Earnings (3-mo MA of YoY)"
