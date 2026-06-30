@@ -15,7 +15,7 @@
 #' Adds a logical `imputed` column (TRUE for filled rows) for downstream
 #' transparency. Static per-series columns are carried onto the new rows.
 fill_gaps <- function(df, max_fill_months) {
-  static_cols <- c("series_id", "units", "source", "label")
+  static_cols <- c("series_id", "units", "source", "label", "method")
   static_cols <- intersect(static_cols, names(df))
 
   df |>
@@ -65,7 +65,12 @@ fill_gaps <- function(df, max_fill_months) {
 #' Caller must have already run assert_no_gaps() on df: lag(value, 12) is a
 #' positional lag, valid as a 12-calendar-month comparison only when there
 #' are no missing months.
-compute_yoy <- function(df, method = c("percent", "log")) {
+#'
+#' `bps` is for level series like an interest rate, where a percent-of-percent
+#' ratio is unstable/misleading near zero (e.g. the Fed funds rate in
+#' 2008-2015 or 2020-2021): it reports the level change in basis points
+#' instead of a relative change.
+compute_yoy <- function(df, method = c("percent", "log", "bps")) {
   method <- match.arg(method)
 
   df |>
@@ -75,11 +80,28 @@ compute_yoy <- function(df, method = c("percent", "log")) {
       value_lag12 = dplyr::lag(value, 12),
       yoy = dplyr::case_when(
         method == "percent" ~ value / value_lag12 - 1,
-        method == "log" ~ log(value) - log(value_lag12)
+        method == "log" ~ log(value) - log(value_lag12),
+        method == "bps" ~ (value - value_lag12) * 100
       )
     ) |>
     dplyr::ungroup() |>
     dplyr::select(-value_lag12)
+}
+
+#' Roll a daily series up to one row per calendar month (mean of the daily
+#' values), so it can flow through the same monthly fill_gaps/compute_yoy/
+#' compute_ma pipeline as the BLS/BEA series. Static per-series columns
+#' (units, source) are carried via dplyr::first().
+aggregate_daily_to_monthly <- function(df) {
+  df |>
+    dplyr::mutate(date = lubridate::floor_date(date, "month")) |>
+    dplyr::group_by(series_id, date) |>
+    dplyr::summarise(
+      value = mean(value, na.rm = TRUE),
+      units = dplyr::first(units),
+      source = dplyr::first(source),
+      .groups = "drop"
+    )
 }
 
 #' Trailing moving average of the YoY series (not of the level), per SPEC.

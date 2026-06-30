@@ -40,6 +40,7 @@ fred:
       units: "percent"
       name: "Federal Funds Effective Rate"
       label: "Federal Funds Effective Rate"
+      method: "bps" # level change in bps, not percent-of-percent — see analysis.method
   output_path: "outputs/fred_dff.csv"
 
 latest_lookback_months: 24
@@ -62,3 +63,9 @@ plot:
     - left_series_id: "DPCERX"
       right_series_id: "CES0500000012"
       label: "Real PCE vs. Real Average Weekly Earnings (3-mo MA of YoY)"
+    - left_series_id: "CES0500000013"
+      right_series_id: "DFF"
+      label: "Real Average Hourly Earnings vs. Federal Funds Rate (YoY, 3-mo MA)"
+    - left_series_id: "DPCERX"
+      right_series_id: "DFF"
+      label: "Real PCE vs. Federal Funds Rate (YoY, 3-mo MA)"

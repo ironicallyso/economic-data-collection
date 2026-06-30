@@ -17,6 +17,13 @@ test_that("compute_yoy log method matches hand calc", {
   expect_equal(result$yoy[13], log(112) - log(100), tolerance = 1e-8)
 })
 
+test_that("compute_yoy bps method matches hand calc", {
+  df <- make_series(13) # values 100..112, +1/month
+  result <- compute_yoy(df, method = "bps")
+  expect_true(all(is.na(result$yoy[1:12])))
+  expect_equal(result$yoy[13], (112 - 100) * 100, tolerance = 1e-8)
+})
+
 test_that("compute_ma produces leading NAs and correct trailing mean", {
   df <- make_series(6)
   df$yoy <- c(NA, NA, 1, 2, 3, 4)
@@ -64,4 +71,31 @@ test_that("fill_gaps errors naming the series when a gap exceeds the cap", {
   df_gapped <- df[-c(4, 5, 6, 7), ] # drop four consecutive months
   expect_error(fill_gaps(df_gapped, max_fill_months = 3), regexp = "S1")
   expect_error(fill_gaps(df_gapped, max_fill_months = 3), regexp = "max_fill_months")
+})
+
+make_daily_series <- function(dates, values, series_id = "DFF", units = "percent", source = "FRED") {
+  tibble::tibble(series_id = series_id, date = dates, value = values, units = units, source = source)
+}
+
+test_that("aggregate_daily_to_monthly averages a single month to one row dated the 1st", {
+  dates <- seq(as.Date("2024-03-01"), as.Date("2024-03-31"), by = "1 day")
+  df <- make_daily_series(dates, values = rep(c(5, 5.25), length.out = length(dates)))
+  result <- aggregate_daily_to_monthly(df)
+
+  expect_equal(nrow(result), 1)
+  expect_equal(result$date, as.Date("2024-03-01"))
+  expect_equal(result$value, mean(df$value), tolerance = 1e-8)
+  expect_equal(result$units, "percent")
+  expect_equal(result$source, "FRED")
+})
+
+test_that("aggregate_daily_to_monthly produces one row per month with correct means", {
+  dates <- seq(as.Date("2024-01-01"), as.Date("2024-02-29"), by = "1 day")
+  values <- ifelse(format(dates, "%m") == "01", 1, 2)
+  df <- make_daily_series(dates, values)
+  result <- aggregate_daily_to_monthly(df)
+
+  expect_equal(nrow(result), 2)
+  expect_equal(result$date, as.Date(c("2024-01-01", "2024-02-01")))
+  expect_equal(result$value, c(1, 2), tolerance = 1e-8)
 })
