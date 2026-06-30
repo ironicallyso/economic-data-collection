@@ -44,9 +44,26 @@ class BEAConfig:
 
 
 @dataclass(frozen=True)
+class FREDSeriesConfig:
+    id: str
+    units: str
+    name: str
+    label: str = ""
+
+
+@dataclass(frozen=True)
+class FREDConfig:
+    base_url: str
+    start_date: str
+    series: List[FREDSeriesConfig]
+    output_path: Path
+
+
+@dataclass(frozen=True)
 class AppConfig:
     bls: BLSConfig
     bea: BEAConfig
+    fred: FREDConfig
     latest_lookback_months: int
 
 
@@ -54,6 +71,7 @@ def load_config(path: Union[str, Path] = "config.yaml") -> AppConfig:
     raw = yaml.safe_load(Path(path).read_text())
     bls_raw = raw["bls"]
     bea_raw = raw["bea"]
+    fred_raw = raw["fred"]
     return AppConfig(
         bls=BLSConfig(
             base_url=bls_raw["base_url"],
@@ -68,6 +86,12 @@ def load_config(path: Union[str, Path] = "config.yaml") -> AppConfig:
             frequency=bea_raw["frequency"],
             tables=[BEATableConfig(**t) for t in bea_raw["tables"]],
             output_path=Path(bea_raw["output_path"]),
+        ),
+        fred=FREDConfig(
+            base_url=fred_raw["base_url"],
+            start_date=fred_raw["start_date"],
+            series=[FREDSeriesConfig(**s) for s in fred_raw["series"]],
+            output_path=Path(fred_raw["output_path"]),
         ),
         latest_lookback_months=raw["latest_lookback_months"],
     )

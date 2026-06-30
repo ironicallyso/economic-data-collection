@@ -32,10 +32,12 @@ A utility that collects U.S. real earnings (BLS) and personal consumption expend
 ## Integration Points
 - **BLS Public Data API v2** — `https://api.bls.gov/publicAPI/v2/timeseries/data/`. Optional key via `BLS_API_KEY` (raises limits to 20yr/request, 500/day). Unregistered works for ≤10yr/request.
 - **BEA API** — `https://apps.bea.gov/api/data/`. Key **required** via `BEA_API_KEY`. Returns the full table as JSON under `BEAAPI.Results.Data` (fields include `LineNumber`, `TimePeriod`, `DataValue`).
+- **FRED API (`series/observations`)** — `https://api.stlouisfed.org/fred/series/observations`. Key **required** via `FRED_API_KEY`. Used to collect the Federal Funds Effective Rate (`DFF`). Returns JSON under `observations[]` (fields `date`, `value`); `value == "."` marks a missing/not-yet-published observation and must be dropped.
 
 ## Known Constraints
 - BLS caps each request at 10 years unregistered / 20 with a key. Earnings series begin 2006-03, so a full backfill is ≤2 requests.
 - BEA returns a whole table; filter to the total-PCE line (line 1) before persisting.
+- FRED's `DFF` is published **daily**, unlike BLS/BEA's monthly series. It is collected into its own CSV (`outputs/fred_dff.csv`) and is intentionally **not** fed into the monthly YoY/3-month-MA analysis pipeline or combined plots, which assume a one-row-per-month grid.
 - Plots: titled, axes labeled with units, legend present, minimum 10×6 inches at 150 dpi.
 
 ## Known Pitfalls

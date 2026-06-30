@@ -9,6 +9,17 @@ import pandas as pd
 TIDY_COLUMNS = ["series_id", "date", "value", "units", "source", "fetched_at"]
 
 
+def latest_date_by_series(output_path: Union[str, Path]) -> Dict[str, str]:
+    """Return the max stored date per series_id in an existing tidy CSV.
+
+    Returns an empty dict if the file doesn't exist yet."""
+    output_path = Path(output_path)
+    if not output_path.exists():
+        return {}
+    df = pd.read_csv(output_path, dtype={"series_id": str})
+    return df.groupby("series_id")["date"].max().to_dict()
+
+
 def upsert_csv(rows: List[Dict], output_path: Union[str, Path]) -> None:
     """Upsert tidy rows into a CSV keyed on (series_id, date), new rows winning."""
     output_path = Path(output_path)
