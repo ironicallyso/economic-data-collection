@@ -2,8 +2,16 @@
 #'
 #' df_one_series must already have yoy/yoy_ma columns and a single series_id.
 plot_yoy_series <- function(df_one_series, label, method, plot_cfg) {
-  y_label <- if (method == "percent") "YoY change (%)" else "YoY change (log points)"
-  method_label <- if (method == "percent") "percent" else "log difference"
+  y_label <- dplyr::case_when(
+    method == "percent" ~ "YoY change (%)",
+    method == "log" ~ "YoY change (log points)",
+    method == "bps" ~ "YoY change (bps)"
+  )
+  method_label <- dplyr::case_when(
+    method == "percent" ~ "percent",
+    method == "log" ~ "log difference",
+    method == "bps" ~ "basis points"
+  )
 
   plot_long <- df_one_series |>
     dplyr::select(date, yoy, yoy_ma) |>
@@ -47,6 +55,8 @@ plot_yoy_series <- function(df_one_series, label, method, plot_cfg) {
 
   if (method == "percent") {
     p <- p + ggplot2::scale_y_continuous(labels = scales::label_percent(accuracy = 0.1))
+  } else if (method == "bps") {
+    p <- p + ggplot2::scale_y_continuous(labels = scales::label_number(suffix = " bps"))
   }
 
   p
@@ -117,18 +127,25 @@ plot_combined_series <- function(df_left, df_right, label, plot_cfg) {
 
   left_label <- df_left$label[1]
   right_label <- df_right$label[1]
+  left_method <- df_left$method[1]
+  right_method <- df_right$method[1]
+
+  axis_labeller <- function(method) {
+    if (method == "bps") scales::label_number(suffix = " bps") else scales::label_percent(accuracy = 0.1)
+  }
+  axis_unit <- function(method) if (method == "bps") "bps" else "%"
 
   p <- ggplot2::ggplot(joined, ggplot2::aes(x = date)) +
     ggplot2::geom_line(ggplot2::aes(y = left_ma, color = left_label)) +
     ggplot2::geom_line(ggplot2::aes(y = right_scaled, color = right_label)) +
     ggplot2::scale_color_manual(values = setNames(c("#377eb8", "#e41a1c"), c(left_label, right_label))) +
     ggplot2::scale_y_continuous(
-      name = paste(left_label, "— YoY (3-mo MA)"),
-      labels = scales::label_percent(accuracy = 0.1),
+      name = sprintf("%s — YoY (3-mo MA, %s)", left_label, axis_unit(left_method)),
+      labels = axis_labeller(left_method),
       sec.axis = ggplot2::sec_axis(
         ~ (. - shift) / scale,
-        name = paste(right_label, "— YoY (3-mo MA)"),
-        labels = scales::label_percent(accuracy = 0.1)
+        name = sprintf("%s — YoY (3-mo MA, %s)", right_label, axis_unit(right_method)),
+        labels = axis_labeller(right_method)
       )
     ) +
     ggplot2::labs(title = label, x = "Month", color = NULL) +

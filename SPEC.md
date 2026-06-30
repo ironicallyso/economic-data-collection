@@ -37,7 +37,8 @@ A utility that collects U.S. real earnings (BLS) and personal consumption expend
 ## Known Constraints
 - BLS caps each request at 10 years unregistered / 20 with a key. Earnings series begin 2006-03, so a full backfill is ≤2 requests.
 - BEA returns a whole table; filter to the total-PCE line (line 1) before persisting.
-- FRED's `DFF` is published **daily**, unlike BLS/BEA's monthly series. It is collected into its own CSV (`outputs/fred_dff.csv`) and is intentionally **not** fed into the monthly YoY/3-month-MA analysis pipeline or combined plots, which assume a one-row-per-month grid.
+- Collection always stores a series at its **full native granularity** — the analysis layer is free to roll up/aggregate however is appropriate for a given comparison, rather than collection being shaped around analysis needs.
+- FRED's `DFF` is published **daily**, unlike BLS/BEA's monthly series, and stays daily in `outputs/fred_dff.csv`. For analysis, it is rolled up to a **monthly average** (matching FRED's own `FEDFUNDS` convention) before entering the YoY/3-month-MA pipeline, which assumes a one-row-per-month grid. Because it's a rate rather than a level, its YoY is the **level change in basis points** (`(rate_t - rate_t-12) * 100`), not a percent-of-percent ratio — the latter is unstable near zero rates.
 - Plots: titled, axes labeled with units, legend present, minimum 10×6 inches at 150 dpi.
 
 ## Known Pitfalls
