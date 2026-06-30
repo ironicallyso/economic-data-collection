@@ -32,6 +32,16 @@ bea:
       label: "PCE price index"
   output_path: "outputs/bea_pce.csv"
 
+fred:
+  base_url: "https://api.stlouisfed.org/fred/series/observations"
+  start_date: "1954-07-01" # earliest available observation for DFF
+  series:
+    - id: "DFF"
+      units: "percent"
+      name: "Federal Funds Effective Rate"
+      label: "Federal Funds Effective Rate"
+  output_path: "outputs/fred_dff.csv"
+
 latest_lookback_months: 24
 
 analysis:
