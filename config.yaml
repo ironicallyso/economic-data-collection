@@ -11,6 +11,10 @@ bls:
       units: "1982-84 dollars"
       name: "Real average weekly earnings, all employees, total private"
       label: "Real average weekly earnings, all employees (total private)"
+    - id: "CUSR0000SA0"
+      units: "index 1982-84=100"
+      name: "Consumer Price Index for All Urban Consumers: All Items in U.S. City Average, Seasonally Adjusted"
+      label: "CPI-U (All Items, SA)"
   output_path: "outputs/bls_earnings.csv"
 
 bea:
@@ -30,6 +34,11 @@ bea:
       units: "index 2017=100"
       name: "PCE price index"
       label: "PCE price index"
+    - table_name: "T20805"
+      line_number: 1
+      units: "millions of current dollars, SAAR"
+      name: "Nominal PCE level"
+      label: "Nominal PCE level (current dollars, SAAR)"
   output_path: "outputs/bea_pce.csv"
 
 fred:

@@ -49,6 +49,7 @@ class FREDSeriesConfig:
     units: str
     name: str
     label: str = ""
+    method: str = ""
 
 
 @dataclass(frozen=True)
